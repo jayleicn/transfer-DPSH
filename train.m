@@ -23,7 +23,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         T = U0 * U';
         A = 1 ./ (1 + exp(-T)); 
         loss_hard_1 = -S.*T + log1p(exp(-T)) + T;
-        loss_hard_1 = sum(loss_hard_1(:)) / bN
+        loss_hard_1 = sum(loss_hard_1(:)) / bN;
 
         loss_M3_1 = log(cosh(abs(U0) - 1));
         loss_M3_1 = sum(loss_M3_1(:)) / cur_b;
