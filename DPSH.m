@@ -81,6 +81,10 @@ function [B_dataset,B_test,map] = DPSH(codelens,dataset_name, ratio)
  
     %% testing
     [map,B_dataset,B_test] = test(net, retrieve_test_L, test_L, retrieve_test, test_data );
+    fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append
+    map_iter = [0; map];
+    fprintf(fileID, '%6d %4.2f\n', map_iter);
+    fclose(fileID);
     save(['./results/', dir_time, '/codes_res', '.mat'], 'B_dataset','B_test','map');
     save(['./results/', dir_time, '/net', '.mat'], 'net');
     totalTime=toc(totalTime);
