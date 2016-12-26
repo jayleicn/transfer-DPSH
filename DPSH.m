@@ -1,17 +1,17 @@
-function [B_dataset,B_test,map] = DPSH(codelens, dataset_target, dataset_source, ratio)
+function [B_dataset,B_test,map] = DPSH(codelens, dataset_t, dataset_s, ratio)
     %% download data and pre-trained CNN from the web
     % download_data; % use "run download_data.m" seperately is prefered,
     % since it takes a lot of time
     %% prepare the dataset % best run once
-    if ~exist([dataset_target,'.mat'])
-        data_prepare(dataset_target);
+    if ~exist([dataset_t,'.mat'])
+        data_prepare(dataset_t);
     end
-    dataset_target = load([dataset_target,'.mat']);
+    dataset_target = load([dataset_t,'.mat']);
 
-    if ~exist([dataset_source,'.mat'])
-        data_prepare(dataset_source);
+    if ~exist([dataset_s,'.mat'])
+        data_prepare(dataset_s);
     end
-    dataset_source = load([dataset_source,'.mat']);
+    dataset_source = load([dataset_s,'.mat']);
 
     %% vary training data size
     % ratio = 1.0;
@@ -22,12 +22,12 @@ function [B_dataset,B_test,map] = DPSH(codelens, dataset_target, dataset_source,
     for label=0:9
         index_t = find(dataset_target.train_L==label);
         index_s = find(dataset_source.train_L==label);
-        N = size(index,1);
+        N = size(index_t,1);
         perm = randperm(N);
         index_t = index_t(perm);
         index_s = index_s(perm);
-        data = dataset_target.train_data(:,:,:,index(1:ceil(N*ratio)));
-        labels = dataset_target.train_L(index(1:ceil(N*ratio)));
+        data = dataset_target.train_data(:,:,:,index_t(1:ceil(N*ratio)));
+        labels = dataset_target.train_L(index_t(1:ceil(N*ratio)));
         train_data_t = cat(4,train_data_t,data);    
         train_L_t = cat(1,train_L_t,labels);
         data = dataset_source.train_data(:,:,:,index_s(1:ceil(N*ratio)));
@@ -61,7 +61,7 @@ function [B_dataset,B_test,map] = DPSH(codelens, dataset_target, dataset_source,
     if ~exist('results', 'dir')
         mkdir('results');
     end
-    dir_time = [dataset_name, '-', num2str(codelens), '-', datestr(now, 'dd-mmm-yyyy-HH:MM:SS')];
+    dir_time = [dataset_t, dataset_s, '-', num2str(codelens), '-', datestr(now, 'dd-mmm-yyyy-HH:MM:SS')];
     mkdir(['results/', dir_time]);
     fileID = fopen(['results/', dir_time, '/loss.log'],'w');  
     fprintf(fileID, '%.2f', 'ratio'); 

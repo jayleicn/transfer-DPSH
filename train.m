@@ -47,7 +47,7 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, L_s, net_sour
         %% update the parameters of CNN
         net = update(net , res, lr, N);
         batch_time = toc(batch_time);
-        fprintf(' iter %d loss %.2f = %.2f + %.2f batch %d/%d (%.1f img/s) ,lr is %d\n', iter, loss_batch, (1-eta)*loss_hard, eta*loss_soft, j+1,ceil(size(X1,4)/batchsize), batchsize/ batch_time,lr) ;
+        fprintf(' iter %d loss %.2f = %.2f + %.2f batch %d/%d (%.1f img/s) ,lr is %d\n', iter, loss_batch, (1-eta)*loss_hard, eta*loss_soft, j+1,ceil(size(X_t,4)/batchsize), batchsize/ batch_time,lr) ;
     end
     loss_iter = loss_iter/ceil(N/batchsize);
 end	
