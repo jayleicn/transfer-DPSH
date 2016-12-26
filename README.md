@@ -1,4 +1,4 @@
-# DPSH-IJCAI16
+# transfer-DPSH
 
 - Setup MatConvNet
 ```

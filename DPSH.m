@@ -33,13 +33,13 @@ function [B_dataset,B_test,map] = DPSH(codelens,dataset_name, ratio)
     net_source = vl_simplenn_tidy(net_source);
 
     %% initialization
-    maxIter = 80;
+    maxIter = 90;
     lambda = 10;
     t=1.0; % temperature of soft_target
     eta=0.1; % weight of soft_target
     %lr = logspace(-2,-6,maxIter); with maxIter =150
-    lr(1:70) =  0.01;
-    lr(71:80) = 0.001;
+    lr(1:80) =  0.01;
+    lr(81:90) = 0.001;
 
     totalTime = tic;
     net = net_structure(net, codelens);
