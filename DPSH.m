@@ -1,29 +1,40 @@
-function [B_dataset,B_test,map] = DPSH(codelens,dataset_name, ratio)
+function [B_dataset,B_test,map] = DPSH(codelens, dataset_target, dataset_source, ratio)
     %% download data and pre-trained CNN from the web
     % download_data; % use "run download_data.m" seperately is prefered,
     % since it takes a lot of time
     %% prepare the dataset % best run once
-    if ~exist([dataset_name,'.mat'])
-        data_prepare(dataset_name);
+    if ~exist([dataset_target,'.mat'])
+        data_prepare(dataset_target);
     end
-    load([dataset_name,'.mat']);
+    dataset_target = load([dataset_target,'.mat']);
+
+    if ~exist([dataset_source,'.mat'])
+        data_prepare(dataset_source);
+    end
+    dataset_source = load([dataset_source,'.mat']);
 
     %% vary training data size
     % ratio = 1.0;
-    train_data_tmp = [];
-    train_L_tmp = [];
+    train_data_t = []; %target
+    train_L_t = [];
+    train_data_s = []; %source
+    train_L_s = [];
     for label=0:9
-        index = find(train_L==label);
+        index_t = find(dataset_target.train_L==label);
+        index_s = find(dataset_source.train_L==label);
         N = size(index,1);
         perm = randperm(N);
-        index = index(perm);
-        data = train_data(:,:,:,index(1:ceil(N*ratio)));
-        labels = train_L(index(1:ceil(N*ratio)));
-        train_data_tmp = cat(4,train_data_tmp,data);    
-        train_L_tmp = cat(1,train_L_tmp,labels);
-    end
-    train_data = train_data_tmp;
-    train_L = train_L_tmp;   
+        index_t = index_t(perm);
+        index_s = index_s(perm);
+        data = dataset_target.train_data(:,:,:,index(1:ceil(N*ratio)));
+        labels = dataset_target.train_L(index(1:ceil(N*ratio)));
+        train_data_t = cat(4,train_data_t,data);    
+        train_L_t = cat(1,train_L_t,labels);
+        data = dataset_source.train_data(:,:,:,index_s(1:ceil(N*ratio)));
+        labels = dataset_source.train_L(index_s(1:ceil(N*ratio)));
+        train_data_s = cat(4,train_data_s,data);    
+        train_L_s = cat(1,train_L_s,labels);
+    end 
 
     %% load the pre-trained CNN and source model
     net = load('/home/jielei/data/model/imagenet-vgg-f.mat');
@@ -43,8 +54,8 @@ function [B_dataset,B_test,map] = DPSH(codelens,dataset_name, ratio)
 
     totalTime = tic;
     net = net_structure(net, codelens);
-    U = zeros(size(train_data,4),codelens);
-    B = zeros(size(train_data,4),codelens);
+    U = zeros(size(train_data_t,4),codelens);
+    B = zeros(size(train_data_t,4),codelens);
 
     %% saving
     if ~exist('results', 'dir')
@@ -61,16 +72,16 @@ function [B_dataset,B_test,map] = DPSH(codelens,dataset_name, ratio)
     fprintf(fileID,'%6s %4s\n','iter','map');
     fclose(fileID);
 
-    %% training train (X1, L1, U, B, net, net_source, t, lambda, eta, iter, lr, loss_iter) 
+    %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(train_data,train_L,U,B,net, net_source, t, lambda, eta, iter, lr(iter), loss_iter);
+        [net, U, B, loss_iter] = train(U,B, train_data_t,train_L_t, net, train_data_s, train_L_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter);
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %12.2f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
         %validating
         if mod(iter, 5) == 0
-            map_val = test(net, retrieve_val_L, val_L, retrieve_val, val_data );
+            map_val = test(net, dataset_target.retrieve_val_L, dataset_target.val_L, dataset_target.retrieve_val, dataset_target.val_data );
             fprintf('current validation MAP is %.2f\n', map_val);
             fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append
             map_iter = [iter; map_val];
@@ -80,7 +91,7 @@ function [B_dataset,B_test,map] = DPSH(codelens,dataset_name, ratio)
     end
  
     %% testing
-    [map,B_dataset,B_test] = test(net, retrieve_test_L, test_L, retrieve_test, test_data );
+    [map,B_dataset,B_test] = test(net, dataset_target.retrieve_test_L, dataset_target.test_L, dataset_target.retrieve_test, dataset_target.test_data );
     fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append
     map_iter = [0; map];
     fprintf(fileID, '%6d %4.2f\n', map_iter);
