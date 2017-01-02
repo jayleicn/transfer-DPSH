@@ -27,7 +27,9 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, L_s, net_sour
         % softmax_U0 = exp(U0) ./ repmat(sum(exp(U0),2),1,size(U0,2));
         % softmax_U0_source = t*t*exp(U0_source) ./ repmat(sum(exp(U0_source),2),1,size(U0_source,2)); % scale *t^2
         softmax_U0 = softmax(U0')';
-        softmax_U0_source = softmax(U0_source')' *t*t; 
+        softmax_U0_source = softmax(U0_source')' *t*t;
+        %size(softmax_U0)
+        %size(softmax_U0_source) 
         U(ix,:) = U0 ; % update relative rows
         B(ix,:) = sign(U0);  % update relative rows
         T = U0 * U' / 2;
