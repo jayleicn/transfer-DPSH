@@ -47,7 +47,7 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, L_s, net_sour
         dJdoutput = gpuArray(reshape(dJdU',[1,1,size(dJdU',1),size(dJdU',2)]));
         res = vl_simplenn( net, im_, dJdoutput);
         %% update the parameters of CNN
-        net = update(net , res, lr, N);
+        net = update(net , res, lr, N, batchsize);
         batch_time = toc(batch_time);
         fprintf(' iter %d loss %.2f = %.2f + %.2f batch %d/%d (%.1f img/s) ,lr is %d\n', iter, loss_batch, (1-eta)*loss_hard, eta*loss_soft, j+1,ceil(size(X_t,4)/batchsize), batchsize/ batch_time,lr) ;
     end

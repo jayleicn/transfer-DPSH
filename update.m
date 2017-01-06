@@ -1,7 +1,6 @@
-function gpu_net = update (gpu_net, res_back, lr, N)
+function gpu_net = update (gpu_net, res_back, lr, N, batch_size)
     weight_decay = 5*1e-4 ;
     n_layers = 20 ;
-    batch_size = 128 ;
     for ii = 1:n_layers        
             if ii >= 20    % fine-tune pretrained layers
                 lr = lr*1;
