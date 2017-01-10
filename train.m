@@ -1,6 +1,5 @@
-function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
+function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter, batchsize) 
     N = size(X_t,4); % 5000
-    batchsize = 32;
     index = randperm(N);
     for j = 0:ceil(N/batchsize)-1
         batch_time=tic;

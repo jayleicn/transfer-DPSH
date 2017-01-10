@@ -1,4 +1,4 @@
-function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, ratio)
+function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize)
     %% download data and pre-trained CNN from the web
     % download_data; % use "run download_data.m" seperately is prefered,
     % since it takes a lot of time
@@ -44,13 +44,13 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     net_source = vl_simplenn_tidy(net_source);
 
     %% initialization
-    maxIter = 90;
+    maxIter = 150;
     lambda = 10;
     %t=1.0; % temperature of soft_target
-    eta=0.1; % weight of soft_target
+    %eta=0.1; % weight of soft_target
     %lr = logspace(-2,-6,maxIter); with maxIter =150
-    lr(1:80) =  0.005;
-    lr(81:90) = 0.001;
+    lr(1:120) =  0.01;
+    lr(121:150) = 0.001;
 
     totalTime = tic;
     net = net_structure(net, codelens);
@@ -75,9 +75,9 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(U,B, train_data_t,train_L_t, net, train_data_s, train_L_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter);
+        [net, U, B, loss_iter] = train(U,B, train_data_t,train_L_t, net, train_data_s, train_L_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize);
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
-        fprintf(fileID, '%6d %12.2f %10d\n', [iter; loss_iter; lr(iter)]);
+        fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
         %validating
         if mod(iter, 5) == 0
@@ -85,7 +85,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
             fprintf('current validation MAP is %.2f\n', map_val);
             fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append
             map_iter = [iter; map_val];
-            fprintf(fileID, '%6d %4.2f\n', map_iter);
+            fprintf(fileID, '%6d %2.4f\n', map_iter);
             fclose(fileID);
         end
     end
@@ -94,7 +94,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     [map,B_dataset,B_test] = test(net, dataset_target.retrieve_test_L, dataset_target.test_L, dataset_target.retrieve_test, dataset_target.test_data );
     fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append
     map_iter = [0; map];
-    fprintf(fileID, '%6d %4.2f\n', map_iter);
+    fprintf(fileID, '%6d %2.4f\n', map_iter);
     fclose(fileID);
     save(['./results/', dir_time, '/codes_res', '.mat'], 'B_dataset','B_test','map');
     save(['./results/', dir_time, '/net', '.mat'], 'net');
