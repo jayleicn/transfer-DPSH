@@ -15,4 +15,6 @@ function net = net_structure (net, codelens)
     net.layers{20}.weights{2} = gpuArray(0.01*randn(1,codelens,'single'));
     net.layers{20}.opts = {};
     net.layers{20}.dilate = 1; % set to default, cannot omit
+
+    net.layers{21}.type = 'sigmoid_ext'; 
 end

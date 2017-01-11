@@ -39,7 +39,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     %% load the pre-trained CNN and source model
     net = load('/home/jielei/data/model/imagenet-vgg-f.mat');
     net = vl_simplenn_tidy(net);
-    net_source = load('/home/jielei/project/s_new/DPSH-IJCAI16/results/mnist32_exp01/mnist-32-06-Jan-2017-23:28:23/net.mat'); % 0.99
+    net_source = load('/home/jielei/project/s_new/DPSH-IJCAI16/results/raw-exp/mnist-32-10-Jan-2017-01:10:23/net.mat'); % 0.99
     net_source = net_source.net;
     net_source = vl_simplenn_tidy(net_source);
 

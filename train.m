@@ -22,13 +22,9 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, L_s, net_sour
         res = vl_simplenn(net, im_);
         res_source = vl_simplenn(net_source, ims_);
         U0 = squeeze(gather(res(end).x))'; % res(end).x is the net output, batchsize * codelen
-        U0_source = squeeze(gather(res_source(end).x))' ./ t; % only source will add temperatue
-        % softmax_U0 = exp(U0) ./ repmat(sum(exp(U0),2),1,size(U0,2));
-        % softmax_U0_source = t*t*exp(U0_source) ./ repmat(sum(exp(U0_source),2),1,size(U0_source,2)); % scale *t^2
+        U0_source = squeeze(gather(res_source(end).x))'; %./ t; % only source will add temperatue
         softmax_U0 = softmax(U0')';
-        softmax_U0_source = softmax(U0_source')' *t*t;
-        %size(softmax_U0)
-        %size(softmax_U0_source) 
+        softmax_U0_source = softmax(U0_source' ./t)';
         U(ix,:) = U0 ; % update relative rows
         B(ix,:) = sign(U0);  % update relative rows
         T = U0 * U' / 2;
@@ -37,20 +33,23 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, L_s, net_sour
         loss_hard_1 = -S.*T + log1p(exp(-T)) + T;
         loss_hard_2 = lambda*((U0-sign(U0)).^2); % log(1+exp(-x)) + x
         loss_hard = (sum(loss_hard_1(:)) + sum(loss_hard_2(:)))/bN;
-        loss_soft = -softmax_U0_source.*log(softmax_U0 + 1e-30);
-        loss_soft = sum(loss_soft(:))/size(ix,2);
-        loss_batch = (1-eta)*loss_hard + eta*loss_soft;
+        loss_soft = -softmax_U0_source.*log(softmax_U0 + 1e-30); % cross_entropy
+        %loss_soft = (U0-U0_source).^2; % L2-norm
+        loss_soft = t*t*sum(loss_soft(:))/size(ix,2);
+        loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;
+        % Note!!! that this is actually -dJdU.
         dJdU = ((S - A) * U - 2*lambda*(U0-sign(U0)))/bN; % hard
-        dJdU_soft = (softmax_U0 - softmax_U0_source)/size(ix,2);
-        dJdU = (1-eta)*dJdU + eta*dJdU_soft; % hard_traget + soft_target   
+        % dJdU_soft = 2*(U0_source - U0)/size(ix,2); % L2-norm
+        dJdU_soft = t*t*(softmax_U0_source - softmax_U0)/size(ix,2); % cross_entropy
+        dJdU = dJdU + eta*dJdU_soft; % hard_traget + soft_target   
         % dJdU_norm = norm(dJdU, 'fro');
         dJdoutput = gpuArray(reshape(dJdU',[1,1,size(dJdU',1),size(dJdU',2)]));
         res = vl_simplenn( net, im_, dJdoutput);
         %% update the parameters of CNN
         net = update(net , res, lr);
         batch_time = toc(batch_time);
-        fprintf(' iter %d loss %.2f = %.2f + %.2f batch %d/%d (%.1f img/s) ,lr is %d\n', iter, loss_batch, (1-eta)*loss_hard, eta*loss_soft, j+1,ceil(size(X_t,4)/batchsize), batchsize/ batch_time,lr) ;
+        fprintf(' iter %d loss %.2f = %.2f + %.2f batch %d/%d (%.1f img/s) ,lr is %d\n', iter, loss_batch, loss_hard, eta*loss_soft, j+1,ceil(size(X_t,4)/batchsize), batchsize/ batch_time,lr) ;
     end
     loss_iter = loss_iter/ceil(N/batchsize);
 end	
