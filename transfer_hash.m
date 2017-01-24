@@ -75,6 +75,11 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     fprintf(fileID,'%6s %4s\n','iter','map');
     fclose(fileID);
 
+    fileID = fopen(['results/', dir_time, '/parameters.log'],'w');    
+    fprintf(fileID,'%s \n','codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption');
+    fprintf(fileID,'%d \t %s \t %s \t %.2f \t %.2f \t %.2f \t %d \t %s \t %s\n', codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption{1}, lossOption{2});
+    fclose(fileID);
+
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
