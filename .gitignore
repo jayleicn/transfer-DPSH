@@ -1,6 +1,6 @@
 # Project-related   #
 *.mat
-./results/
+./results
 
 
 # Packages #
