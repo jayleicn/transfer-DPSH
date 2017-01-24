@@ -2,7 +2,7 @@
 
 - Setup MatConvNet
 ```
-run ~/tools/matconvnet-1.0-beta23/matlab/vl_setupnn.m
+run ~/tools/ext_matconvnet/matlab/vl_setupnn.m
 ```
 - Download the Pretrained CNN model VGG-F from the website
 ```
