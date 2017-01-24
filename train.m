@@ -33,10 +33,10 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, Idx_s, net_so
         %% run the CNN
         res_source = vl_simplenn(net_source, ims_);
         U0_source = squeeze(gather(res_source(end).x))'; % only source will add temperatue
-        if ~strcmp(lossOption{2}, '10-distill')
+        if strcmp(lossOption{2}, '10-distill')
             tmp = [];
             for i = 1:length(ids)/10
-                tmp(i,:) = sum(U0_source(i*10-9, i*10,:));
+                tmp(i,:) = sum(U0_source(i*10-9:i*10,:));
             end
             U0_source = tmp;
         end
