@@ -18,8 +18,8 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, Idx_s, net_so
         B(ix,:) = sign(U0);  % update relative rows
 
         %% load source
-        ids =  cat(1, Idx_s(ix));
-        if ~strcmp(lossOption(2), '10-distill')
+        ids =  cat(1, Idx_s{ix});
+        if ~strcmp(lossOption{2}, '10-distill')
             tmp_ids = [1:length(ids)/10] * 10;
             ids = ids(tmp_ids);
         end
@@ -33,7 +33,7 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, Idx_s, net_so
         %% run the CNN
         res_source = vl_simplenn(net_source, ims_);
         U0_source = squeeze(gather(res_source(end).x))'; % only source will add temperatue
-        if ~strcmp(lossOption(2), '10-distill')
+        if ~strcmp(lossOption{2}, '10-distill')
             tmp = [];
             for i = 1:length(ids)/10
                 tmp(i,:) = sum(U0_source(i*10-9, i*10,:));
@@ -42,10 +42,10 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, Idx_s, net_so
         end
 
 
-        if strcmp(lossOption(1), 'soft-only')
+        if strcmp(lossOption{1}, 'soft-only')
             loss_hard = 0;
             dJdU = 0;
-            switch lossOption(2)
+            switch lossOption{2}
                 case 'l2-norm'
                     loss_soft = (U0-U0_source).^2; % L2-norm
                     dJdU_soft = 2*(U0_source - U0)/size(ix,2); % L2-norm
@@ -58,7 +58,7 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, Idx_s, net_so
                     disp('Err for lossOption field 2');
             end
 
-        elseif strcmp(lossOption(1), 'soft-hard')
+        elseif strcmp(lossOption{1}, 'soft-hard')
             T = U0 * U' / 2;
             A = 1 ./ (1 + exp(-T)); 
             bN = size(ix, 2) * N;
@@ -66,7 +66,7 @@ function [net, U, B, loss_iter] = train (U, B, X_t, L_t, net, X_s, Idx_s, net_so
             loss_hard_2 = lambda*((U0-sign(U0)).^2); % log(1+exp(-x)) + x
             loss_hard = (sum(loss_hard_1(:)) + sum(loss_hard_2(:)))/bN;
             dJdU = ((S - A) * U - 2*lambda*(U0-sign(U0)))/bN; % hard
-            switch lossOption(2)
+            switch lossOption{2}
                 case 'l2-norm'
                     loss_soft = (U0-U0_source).^2; % L2-norm
                     dJdU_soft = 2*(U0_source - U0)/size(ix,2); % L2-norm
