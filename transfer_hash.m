@@ -1,8 +1,9 @@
-function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize)
+function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption)
     %% download data and pre-trained CNN from the web
     % download_data; % use "run download_data.m" seperately is prefered,
     % since it takes a lot of time
     %% prepare the dataset % best run once
+    % lossOption = '1-distill', '10-distill', 'l2-norm'
     if ~exist([dataset_t,'.mat'])
         data_prepare(dataset_t);
     end
@@ -15,25 +16,27 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
 
     %% vary training data size
     % ratio = 1.0;
-    train_data_t = []; %target
+    train_data_t = []; % target
     train_L_t = [];
-    train_data_s = []; %source
-    train_L_s = [];
+    train_idx_s = {}; % source index
     for label=0:9
         index_t = find(dataset_target.train_L==label);
         index_s = find(dataset_source.train_L==label);
         N = size(index_t,1);
         perm = randperm(N);
         index_t = index_t(perm);
-        index_s = index_s(perm);
         data = dataset_target.train_data(:,:,:,index_t(1:ceil(N*ratio)));
         labels = dataset_target.train_L(index_t(1:ceil(N*ratio)));
-        train_data_t = cat(4,train_data_t,data);    
+        train_data_t = cat(4,train_data_t,data);  
+        len_1 = length(train_L_t) + 1;  
         train_L_t = cat(1,train_L_t,labels);
-        data = dataset_source.train_data(:,:,:,index_s(1:ceil(N*ratio)));
-        labels = dataset_source.train_L(index_s(1:ceil(N*ratio)));
-        train_data_s = cat(4,train_data_s,data);    
-        train_L_s = cat(1,train_L_s,labels);
+        len_2 = length(train_L_t);
+        
+        % randomly 10 source for every target
+        for i=len_1:len_2 
+            r = randi([1, N], 1,10);
+            train_idx_s{i} = index_s(r);
+        end
     end 
 
     %% load the pre-trained CNN and source model
@@ -75,7 +78,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(U,B, train_data_t,train_L_t, net, train_data_s, train_L_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize);
+        [net, U, B, loss_iter] = train(U,B, train_data_t,train_L_t, net, dataset_source.train_data, train_idx_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize, lossOption);
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
