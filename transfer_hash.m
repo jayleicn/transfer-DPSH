@@ -1,4 +1,4 @@
-function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption)
+function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize)
     %% download data and pre-trained CNN from the web
     % download_data; % use "run download_data.m" seperately is prefered,
     % since it takes a lot of time
@@ -84,13 +84,13 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
 
     fileID = fopen(['results/', dir_time, '/parameters.log'],'w');    
     fprintf(fileID,'%s \n','codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption');
-    fprintf(fileID,'%d \t %s \t %s \t %.2f \t %.2f \t %.2f \t %d \t %s \t %s\n', codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption{1}, lossOption{2});
+    fprintf(fileID,'%d \t %s \t %s \t %.2f \t %.2f \t %.2f \t %d \t %s \t %s\n', codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize);
     fclose(fileID);
 
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(U,B,weights_source, train_data_t,train_L_t, net, U0_source, dataset_source.U0_L, t, lambda, eta, iter, lr(iter), loss_iter, batchsize, lossOption); %dataset_source.train_data, train_idx_s, net_source,
+        [net, U, B, loss_iter] = train(U,B,weights_source, train_data_t,train_L_t, net, U0_source, dataset_source.U0_L, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);

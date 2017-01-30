@@ -8,7 +8,7 @@ l = length(eta);
 map = zeros(4,l);
 for i=1:1
    for j=1:l
-     [ ~, ~, map_tmp] = transfer_hash(32, 'svhn', 'mnist', 2, eta(j), ratio_array(i), batchsize(i), {'soft-hard', '10-distill'});
+     [ ~, ~, map_tmp] = transfer_hash(32, 'svhn', 'mnist', 2, eta(j), ratio_array(i), batchsize(i));
      map(i+1,j) = map_tmp;
      map(1,j)=eta(j);
    end
