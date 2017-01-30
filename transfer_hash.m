@@ -29,14 +29,11 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
         data = dataset_target.train_data(:,:,:,index_t(1:ceil(N*ratio)));
         labels = dataset_target.train_L(index_t(1:ceil(N*ratio)));
         train_data_t = cat(4,train_data_t,data);  
-        
+        train_L_t = cat(1,train_L_t,labels);       
         % source
         index_s = find(dataset_source.U0_L==label);
-        U0_source{i} = dataset_source.U0_source(index_s); % 10 * W*H*Code_len*N
-        % len_1 = length(train_L_t) + 1;  
-        % train_L_t = cat(1,train_L_t,labels);
-        % len_2 = length(train_L_t);
-        
+        U0_source{label+1} = dataset_source.U0_source(index_s,:); % 10 * W*H*Code_len*N
+
         % randomly 10 source for every target
         % for i=len_1:len_2 
         %     r = randi([1, N], 1,10);
@@ -65,7 +62,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     net = net_structure(net, codelens);
     U = zeros(size(train_data_t,4),codelens);
     B = zeros(size(train_data_t,4),codelens);
-    W = ones(10,500)./500 % initialized as the average
+    W = ones(10,500)./500; % initialized as the average
 
     %% saving
     if ~exist('results', 'dir')
@@ -90,7 +87,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(U,B,weights_source, train_data_t,train_L_t, net, U0_source, dataset_source.U0_L, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
+        [net, U, B, loss_iter] = train(U,B,W, train_data_t,train_L_t, net, U0_source, dataset_source.U0_L, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);

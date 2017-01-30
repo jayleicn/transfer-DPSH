@@ -1,7 +1,7 @@
 function [net, U, B, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, U0_L, t, lambda, eta, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
     N = size(X_t,4); % 5000
     index = randperm(N);
-    codelen = size(U0_source,2);
+    codelen = size(U0_source{1},2);
     for j = 0:ceil(N/batchsize)-1
         batch_time=tic;
         %% random select a minibatch
@@ -27,10 +27,13 @@ function [net, U, B, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, U0_L
         loss_hard = (sum(loss_hard_1(:)) + sum(loss_hard_2(:)))/bN;
         dJdU = ((S - A) * U - 2*lambda*(U0-sign(U0)))/bN; % hard
 
+        %size(U0_source{1})
+        %size(repmat(W(1,:)', 1, codelen))
         for i = 0:9
-            cls_weighted_U0_source(i+1,:) = U0_source{i} .* repmat(W(i+1)', 1, codelen)
+            tmp = U0_source{i+1} .* repmat(W(i+1,:)', 1, codelen);
+            cls_weighted_U0_source(i+1,:) = sum(tmp, 1);
         end
-        weighted_U0_source = cls_weighted_U0_source(labels+1,:) % batchsize * codelen
+        weighted_U0_source = cls_weighted_U0_source(labels+1,:); % batchsize * codelen
         
         softmax_U0 = softmax(U0')';
         softmax_weighted_U0_source = softmax(weighted_U0_source' ./t)';

@@ -18,6 +18,7 @@ function source_data_prep(dataset_s) % train_data, train_L  *,*,*,5000
 
     bs = 256; %batchsize
     N = length(dataset_source.train_L);
+    U0_source = [];
     for j = 0:ceil(N/bs)-1
         ids = (1+j*bs):min((j+1)*bs,N);
         ims = X_s(:,:,:,ids);
@@ -29,7 +30,7 @@ function source_data_prep(dataset_s) % train_data, train_L  *,*,*,5000
         %% run the CNN
         res_source = vl_simplenn(net_source, ims_);
         tmp_U0_source = squeeze(gather(res_source(end).x))'; % only source will add temperatue
-        cat(2, U0_source, tmp_U0_source);
+        U0_source = cat(1, U0_source, tmp_U0_source);
     end
     U0_L = dataset_source.train_L;
     save([dataset_s,'_U0.mat'], 'U0_source', 'U0_L');
