@@ -9,42 +9,47 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     end
     dataset_target = load([dataset_t,'.mat']);
 
-    if ~exist([dataset_s,'.mat'])
-        data_prepare(dataset_s);
+    if ~exist([dataset_s,'_U0.mat'])
+        source_data_prep(dataset_s);
     end
-    dataset_source = load([dataset_s,'.mat']);
+    dataset_source = load([dataset_s,'_U0.mat']);
 
     %% vary training data size
     % ratio = 1.0;
     train_data_t = []; % target
     train_L_t = [];
-    train_idx_s = {}; % source index
+%    train_idx_s = {}; % source index
     for label=0:9
+
+        % target
         index_t = find(dataset_target.train_L==label);
-        index_s = find(dataset_source.train_L==label);
         N = size(index_t,1);
         perm = randperm(N);
         index_t = index_t(perm);
         data = dataset_target.train_data(:,:,:,index_t(1:ceil(N*ratio)));
         labels = dataset_target.train_L(index_t(1:ceil(N*ratio)));
         train_data_t = cat(4,train_data_t,data);  
-        len_1 = length(train_L_t) + 1;  
-        train_L_t = cat(1,train_L_t,labels);
-        len_2 = length(train_L_t);
+        
+        % source
+        index_s = find(dataset_source.U0_L==label);
+        U0_source{i} = dataset_source.U0_source(index_s); % 10 * W*H*Code_len*N
+        % len_1 = length(train_L_t) + 1;  
+        % train_L_t = cat(1,train_L_t,labels);
+        % len_2 = length(train_L_t);
         
         % randomly 10 source for every target
-        for i=len_1:len_2 
-            r = randi([1, N], 1,10);
-            train_idx_s{i} = index_s(r);
-        end
+        % for i=len_1:len_2 
+        %     r = randi([1, N], 1,10);
+        %     train_idx_s{i} = index_s(r);
+        % end
     end 
 
     %% load the pre-trained CNN and source model
     net = load('/home/jielei/data/model/imagenet-vgg-f.mat');
     net = vl_simplenn_tidy(net);
-    net_source = load('/home/jielei/project/s_new/DPSH-IJCAI16/results/raw-exp/mnist-32-10-Jan-2017-01:10:23/net.mat'); % 0.99
-    net_source = net_source.net;
-    net_source = vl_simplenn_tidy(net_source);
+    % net_source = load('/home/jielei/project/s_new/DPSH-IJCAI16/results/raw-exp/mnist-32-10-Jan-2017-01:10:23/net.mat'); % 0.99
+    % net_source = net_source.net;
+    % net_source = vl_simplenn_tidy(net_source);
 
     %% initialization
     maxIter = 160;
@@ -60,6 +65,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     net = net_structure(net, codelens);
     U = zeros(size(train_data_t,4),codelens);
     B = zeros(size(train_data_t,4),codelens);
+    W = ones(10,500)./500 % initialized as the average
 
     %% saving
     if ~exist('results', 'dir')
@@ -84,7 +90,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(U,B, train_data_t,train_L_t, net, dataset_source.train_data, train_idx_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize, lossOption);
+        [net, U, B, loss_iter] = train(U,B,weights_source, train_data_t,train_L_t, net, U0_source, dataset_source.U0_L, t, lambda, eta, iter, lr(iter), loss_iter, batchsize, lossOption); %dataset_source.train_data, train_idx_s, net_source,
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
