@@ -47,13 +47,14 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     net_source = vl_simplenn_tidy(net_source);
 
     %% initialization
-    maxIter = 150;
+    maxIter = 160;
     lambda = 10;
     %t=1.0; % temperature of soft_target
     %eta=0.1; % weight of soft_target
     %lr = logspace(-2,-6,maxIter); with maxIter =150
-    lr(1:120) =  0.01;
-    lr(121:150) = 0.001;
+    lr(1:100) =  0.03;
+    lr(101:150) = 0.01;
+    lr(151:160) = 0.001;
 
     totalTime = tic;
     net = net_structure(net, codelens);
@@ -88,7 +89,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
         %validating
-        if mod(iter, 5) == 0
+        if mod(iter, 20) == 0
             map_val = test(net, dataset_target.retrieve_val_L, dataset_target.val_L, dataset_target.retrieve_val, dataset_target.val_data );
             fprintf('current validation MAP is %.2f\n', map_val);
             fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append

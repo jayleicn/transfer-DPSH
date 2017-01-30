@@ -1,11 +1,12 @@
 function map = main()
-ratio_array = [0.05, 0.1, 0.2];
-batchsize = [32, 32, 32];
+ratio_array = [0.05];%, 0.1, 0.2];
+batchsize = [32];%, 32, 32];
 t = [2];%[ 0.5, 1, 2, 5, 10, 20];
-eta = [0.001, 0.01, 0.1, 0.2, 0.5, 0.7, 1];
+%eta = [0.001, 0.01, 0.1, 0.2, 0.5, 0.7, 1];
+eta= [0.1, 0.1, 0.1, 0.1];
 l = length(eta);
 map = zeros(4,l);
-for i=1:3
+for i=1:1
    for j=1:l
      [ ~, ~, map_tmp] = transfer_hash(32, 'svhn', 'mnist', 2, eta(j), ratio_array(i), batchsize(i), {'soft-hard', '10-distill'});
      map(i+1,j) = map_tmp;
