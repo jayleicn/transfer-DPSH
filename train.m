@@ -1,4 +1,4 @@
-function [net, U, B, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, U0_L, t, lambda, eta, iter, lr, loss_iter, batchsize, lossOption) %X_s, Idx_s, net_source,
+function [net, U, B, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, U0_L, t, lambda, eta, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
     N = size(X_t,4); % 5000
     index = randperm(N);
     codelen = size(U0_source,2);
