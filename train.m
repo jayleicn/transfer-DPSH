@@ -1,4 +1,4 @@
-function [net, U, B, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, U0_L, t, lambda, eta, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
+function [net, U, B, W, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, t, lambda, eta, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
     N = size(X_t,4); % 5000
     index = randperm(N);
     codelen = size(U0_source{1},2);
@@ -8,7 +8,6 @@ function [net, U, B, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, U0_L
         ix = index((1+j*batchsize):min((j+1)*batchsize,N));
         S = calcNeighbor (L_t, ix, 1:N); % #batchsize * N in {1,0}, similarity matrix
         %% load target
-        labels = U0_L(ix);
         im = X_t(:,:,:,ix);
         im_ = single(im); % note: 0-255 range, single precision
         im_ = imresize(im_, net.meta.normalization.imageSize(1:2)); % resize 32 --> 224
@@ -27,14 +26,16 @@ function [net, U, B, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, U0_L
         loss_hard = (sum(loss_hard_1(:)) + sum(loss_hard_2(:)))/bN;
         dJdU = ((S - A) * U - 2*lambda*(U0-sign(U0)))/bN; % hard
 
-        %size(U0_source{1})
-        %size(repmat(W(1,:)', 1, codelen))
+        % averged sum [source]
         for i = 0:9
-            tmp = U0_source{i+1} .* repmat(W(i+1,:)', 1, codelen);
-            cls_weighted_U0_source(i+1,:) = sum(tmp, 1);
+            tmp = U0_source{i+1} .* repmat(500.*W(i+1,:)', 1, codelen);
+            cls_weighted_U0_source(i+1,:) = sum(tmp, 1) ./ 500;
         end
+        labels = L_t(ix); % this should be L_t, from target set.
         weighted_U0_source = cls_weighted_U0_source(labels+1,:); % batchsize * codelen
         
+        %s
+
         softmax_U0 = softmax(U0')';
         softmax_weighted_U0_source = softmax(weighted_U0_source' ./t)';
         loss_soft = -softmax_weighted_U0_source.*log(softmax_U0 + 1e-30); % cross_entropy

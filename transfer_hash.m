@@ -20,7 +20,6 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     train_L_t = [];
 %    train_idx_s = {}; % source index
     for label=0:9
-
         % target
         index_t = find(dataset_target.train_L==label);
         N = size(index_t,1);
@@ -87,7 +86,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(U,B,W, train_data_t,train_L_t, net, U0_source, dataset_source.U0_L, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
+        [net, U, B, W, loss_iter] = train(U,B,W, train_data_t,train_L_t, net, U0_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
