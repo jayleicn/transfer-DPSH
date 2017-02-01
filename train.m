@@ -41,7 +41,9 @@ function [net, U, B, W, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, t
         loss_soft = -P.*log(softmax_U0 + 1e-30); % cross_entropy
         dJdU_soft = t*t*(P - softmax_U0)/size(ix,2); % cross_entropy
 
-        loss_soft = sum(loss_soft(:))/size(ix,2);
+        absW = abs(W(labels+1,:));
+        loss_soft = ( sum(loss_soft(:))  + sum(absW(:)) )/size(ix,2);
+
         loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;
         dJdU = dJdU + eta*dJdU_soft;
@@ -67,9 +69,9 @@ function [net, U, B, W, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, t
             for i = 1:10
                num_i = sum(labels==i);
                if num_i
-                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1) ;%./ num_i;
+                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1) - sign(W(i,:)); % add l1 norm
                else
-                  cls_dJdW(i,:) = zeros(1,500);
+                  cls_dJdW(i,:) = zeros(1,500); % - sign(W(i,:)); % do not add l1 norm, since no update for it
                end
             end
             W = W + lr_w .* cls_dJdW; % W [ 10 x n_per_cls ], note cls_dJdW is negative derative

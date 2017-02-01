@@ -107,7 +107,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     map_iter = [0; map];
     fprintf(fileID, '%6d %2.4f\n', map_iter);
     fclose(fileID);
-    save(['./results/', dir_time, '/codes_res', '.mat'], 'B_dataset','B_test','map');
+    save(['./results/', dir_time, '/codes_res', '.mat'], 'B_dataset','B_test','map', 'W');
     save(['./results/', dir_time, '/net', '.mat'], 'net');
     totalTime=toc(totalTime);
     fprintf('Total elapsed time is %4.2f seconds', totalTime);
