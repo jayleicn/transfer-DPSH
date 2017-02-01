@@ -1,9 +1,4 @@
 function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize)
-    %% download data and pre-trained CNN from the web
-    % download_data; % use "run download_data.m" seperately is prefered,
-    % since it takes a lot of time
-    %% prepare the dataset % best run once
-    % lossOption = '1-distill', '10-distill', 'l2-norm'
     if ~exist([dataset_t,'.mat'])
         data_prepare(dataset_t);
     end
@@ -18,12 +13,12 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     % ratio = 1.0;
     train_data_t = []; % target
     train_L_t = [];
-%    train_idx_s = {}; % source index
+    s_1 = RandStream('mt19937ar','Seed',1); % random seed for training data.
     for label=0:9
         % target
         index_t = find(dataset_target.train_L==label);
         N = size(index_t,1);
-        perm = randperm(N);
+        perm = randperm(s_1,N);
         index_t = index_t(perm);
         data = dataset_target.train_data(:,:,:,index_t(1:ceil(N*ratio)));
         labels = dataset_target.train_L(index_t(1:ceil(N*ratio)));
@@ -32,20 +27,11 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
         % source
         index_s = find(dataset_source.U0_L==label);
         U0_source{label+1} = dataset_source.U0_source(index_s,:); % 10 * W*H*Code_len*N
-
-        % randomly 10 source for every target
-        % for i=len_1:len_2 
-        %     r = randi([1, N], 1,10);
-        %     train_idx_s{i} = index_s(r);
-        % end
     end 
 
     %% load the pre-trained CNN and source model
     net = load('/home/jielei/data/model/imagenet-vgg-f.mat');
     net = vl_simplenn_tidy(net);
-    % net_source = load('/home/jielei/project/s_new/DPSH-IJCAI16/results/raw-exp/mnist-32-10-Jan-2017-01:10:23/net.mat'); % 0.99
-    % net_source = net_source.net;
-    % net_source = vl_simplenn_tidy(net_source);
 
     %% initialization
     maxIter = 160;
@@ -82,11 +68,11 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     fprintf(fileID,'%s \n','codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption');
     fprintf(fileID,'%d \t %s \t %s \t %.2f \t %.2f \t %.2f \t %d \t %s \t %s\n', codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize);
     fclose(fileID);
-
-    %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
+    
+    s_2 = RandStream('mt19937ar','Seed',2);  % random seed to shuffle
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, W, loss_iter] = train(U,B,W, train_data_t,train_L_t, net, U0_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
+        [net, U, B, W, loss_iter] = train(U,B,W, s_2, train_data_t,train_L_t, net, U0_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
