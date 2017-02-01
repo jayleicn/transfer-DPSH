@@ -34,12 +34,12 @@ function [net, U, B, W, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, t
         labels = L_t(ix); % this should be L_t, from target set.
         weighted_U0_source = cls_weighted_U0_source(labels+1,:); % batchsize * codelen
         
-        %s
-
+        % update neural nets & compute loss
         softmax_U0 = softmax(U0')';
-        softmax_weighted_U0_source = softmax(weighted_U0_source' ./t)';
-        loss_soft = -softmax_weighted_U0_source.*log(softmax_U0 + 1e-30); % cross_entropy
-        dJdU_soft = t*t*(softmax_weighted_U0_source - softmax_U0)/size(ix,2); % cross_entropy
+        Q = weighted_U0_source./t;
+        P = softmax(Q')';
+        loss_soft = -P.*log(softmax_U0 + 1e-30); % cross_entropy
+        dJdU_soft = t*t*(P - softmax_U0)/size(ix,2); % cross_entropy
 
         loss_soft = sum(loss_soft(:))/size(ix,2);
         loss_batch = loss_hard + eta*loss_soft;
@@ -49,6 +49,29 @@ function [net, U, B, W, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, t
         res = vl_simplenn( net, im_, dJdoutput);
         %% update the parameters of CNN
         net = update(net , res, lr);
+
+        % Update W begin 
+        % How? update from W(1,:) to W(10,:), in sequence.
+        % for single first
+         % [batchsize * code_len]
+        updateW = true;
+        if updateW 
+            lr_w = 0.01;
+            dJdP = -log(softmax_U0 + 1e-30); % [batchsize * code_len]
+            for i =1:batchsize
+               single_dPdQ = repmat(P(i,:),1,codelen) .* eye(codelen) - P(i,:)*P(i,:)'; % code_len * code_len
+               single_dQdW = U0_source{labels(i)+1}'; % should be[ code_len x n_per_cls ]
+               dJdW(i,:) = dJdP(i,:) * single_dPdQ * single_dQdW; % (batchsize x) [1 x codelen] * [ codelen x codelen ] * [ codelen x  n_per_cls ]
+            end
+
+            for i = 1:10
+               cls_dJdW(i,:) = - sum(dJdW(find(labels==i)), 1) ./ sum(labels==i);
+            end
+
+            W = W + lr_w .* cls_dJdW; % W [ 10 x n_per_cls ], note cls_dJdW is negative derative
+        end
+        % Update W end
+
         batch_time = toc(batch_time);
         fprintf(' iter %d loss %.2f = %.2f + %.2f batch %d/%d (%.1f img/s) ,lr is %d\n', iter, loss_batch, loss_hard, eta*loss_soft, j+1,ceil(size(X_t,4)/batchsize), batchsize/ batch_time,lr) ;
     end
