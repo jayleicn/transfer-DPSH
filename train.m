@@ -58,16 +58,20 @@ function [net, U, B, W, loss_iter] = train (U, B, W, X_t, L_t, net, U0_source, t
         if updateW 
             lr_w = 0.01;
             dJdP = -log(softmax_U0 + 1e-30); % [batchsize * code_len]
-            for i =1:batchsize
-               single_dPdQ = repmat(P(i,:),1,codelen) .* eye(codelen) - P(i,:)*P(i,:)'; % code_len * code_len
+            for i =1:length(labels)
+               single_dPdQ = repmat(P(i,:)',1,codelen) .* eye(codelen) - P(i,:)'*P(i,:); % code_len * code_len
                single_dQdW = U0_source{labels(i)+1}'; % should be[ code_len x n_per_cls ]
                dJdW(i,:) = dJdP(i,:) * single_dPdQ * single_dQdW; % (batchsize x) [1 x codelen] * [ codelen x codelen ] * [ codelen x  n_per_cls ]
             end
 
             for i = 1:10
-               cls_dJdW(i,:) = - sum(dJdW(find(labels==i)), 1) ./ sum(labels==i);
+               num_i = sum(labels==i);
+               if num_i
+                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1) ;%./ num_i;
+               else
+                  cls_dJdW(i,:) = zeros(1,500);
+               end
             end
-
             W = W + lr_w .* cls_dJdW; % W [ 10 x n_per_cls ], note cls_dJdW is negative derative
         end
         % Update W end
