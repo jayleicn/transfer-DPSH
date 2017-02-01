@@ -69,7 +69,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             for i = 1:10
                num_i = sum(labels==i);
                if num_i
-                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1) - sign(W(i,:)); % add l1 norm
+                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i  - sign(W(i,:)); % add l1 norm
                else
                   cls_dJdW(i,:) = zeros(1,500); % - sign(W(i,:)); % do not add l1 norm, since no update for it
                end
