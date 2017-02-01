@@ -19,11 +19,13 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     train_data_t = []; % target
     train_L_t = [];
     train_idx_s = {}; % source index
+
+    s_1 = RandStream('mt19937ar','Seed',1); % random seed for training data.
     for label=0:9
         index_t = find(dataset_target.train_L==label);
         index_s = find(dataset_source.train_L==label);
         N = size(index_t,1);
-        perm = randperm(N);
+        perm = randperm(s_1, N);
         index_t = index_t(perm);
         data = dataset_target.train_data(:,:,:,index_t(1:ceil(N*ratio)));
         labels = dataset_target.train_L(index_t(1:ceil(N*ratio)));
@@ -82,9 +84,10 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     fclose(fileID);
 
     %% training train  (U, B, X_t, L_t, net, X_s, L_s, net_source, t, lambda, eta, iter, lr, loss_iter) 
+    s_2 = RandStream('mt19937ar','Seed',2);  % random seed to shuffle
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, loss_iter] = train(U,B, train_data_t,train_L_t, net, dataset_source.train_data, train_idx_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize, lossOption);
+        [net, U, B, loss_iter] = train(U,B, s_2, train_data_t,train_L_t, net, dataset_source.train_data, train_idx_s, net_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize, lossOption);
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
