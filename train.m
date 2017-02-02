@@ -41,8 +41,15 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         loss_soft = -P.*log(softmax_U0 + 1e-30); % cross_entropy
         dJdU_soft = t*t*(P - softmax_U0)/size(ix,2); % cross_entropy
 
-        absW = abs(W(labels+1,:));
-        loss_soft = ( sum(loss_soft(:))  + mu*sum(absW(:)) )/size(ix,2);
+
+        % sum-to-one constraint, else using l1-norm
+        sum_to_one = true; 
+        if sum_to_one
+            batchW = W(labels+1,:);
+        else
+            batchW = abs(W(labels+1,:));
+        end
+        loss_soft = ( sum(loss_soft(:))  + mu*(sum(batchW(:))-size(ix,2)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
 
         loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;
@@ -55,7 +62,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         % Update W begin 
         % How? update from W(1,:) to W(10,:), in sequence.
         % for single first
-         % [batchsize * code_len]
+        % [batchsize * code_len]
         updateW = true;
         if updateW 
             lr_w = 0.01;
@@ -69,7 +76,11 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             for i = 1:10
                num_i = sum(labels==i);
                if num_i
-                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i  - mu * sign(W(i,:)); % add l1 norm
+                  if sum_to_one
+                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * abs(sign(W(i,:)));
+                  else
+                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * sign(W(i,:)); % add l1 norm
+                  end
                else
                   cls_dJdW(i,:) = zeros(1,500); % - sign(W(i,:)); % do not add l1 norm, since no update for it
                end
