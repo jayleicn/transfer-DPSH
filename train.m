@@ -1,4 +1,4 @@
-function [net, U, B, loss_iter] = train (U, B, s_2, X_t, L_t, net, X_s, Idx_s, net_source, t, lambda, eta, iter, lr, loss_iter, batchsize, lossOption) 
+    function [net, U, B, loss_iter] = train (U, B, s_2, X_t, L_t, net, X_s, Idx_s, net_source, t, lambda, eta, iter, lr, loss_iter, batchsize, lossOption) 
     N = size(X_t,4); % 5000
     index = randperm(s_2,N);
     for j = 0:ceil(N/batchsize)-1
