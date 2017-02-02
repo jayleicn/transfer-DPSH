@@ -1,4 +1,4 @@
-function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_source, t, lambda, eta, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
+function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_source, t, lambda, eta, mu, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
     N = size(X_t,4); % 5000 * ratio
     index = randperm(s_2, N); 
     codelen = size(U0_source{1},2);
@@ -42,7 +42,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         dJdU_soft = t*t*(P - softmax_U0)/size(ix,2); % cross_entropy
 
         absW = abs(W(labels+1,:));
-        loss_soft = ( sum(loss_soft(:))  + sum(absW(:)) )/size(ix,2);
+        loss_soft = ( sum(loss_soft(:))  + mu*sum(absW(:)) )/size(ix,2);
 
         loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;
@@ -69,7 +69,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             for i = 1:10
                num_i = sum(labels==i);
                if num_i
-                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i  - sign(W(i,:)); % add l1 norm
+                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i  - mu * sign(W(i,:)); % add l1 norm
                else
                   cls_dJdW(i,:) = zeros(1,500); % - sign(W(i,:)); % do not add l1 norm, since no update for it
                end

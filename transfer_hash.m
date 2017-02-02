@@ -1,4 +1,4 @@
-function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize)
+function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, mu, ratio,  batchsize)
     if ~exist([dataset_t,'.mat'])
         data_prepare(dataset_t);
     end
@@ -72,7 +72,7 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     s_2 = RandStream('mt19937ar','Seed',2);  % random seed to shuffle
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, W, loss_iter] = train(U,B,W, s_2, train_data_t,train_L_t, net, U0_source, t, lambda, eta, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
+        [net, U, B, W, loss_iter] = train(U,B,W, s_2, train_data_t,train_L_t, net, U0_source, t, lambda, eta, mu, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
