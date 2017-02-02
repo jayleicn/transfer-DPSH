@@ -46,10 +46,11 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         sum_to_one = true; 
         if sum_to_one
             batchW = W(labels+1,:);
+            loss_soft = ( sum(loss_soft(:))  + mu*(sum(batchW(:))-size(ix,2)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
         else
             batchW = abs(W(labels+1,:));
+            loss_soft = ( sum(loss_soft(:))  + mu*sum(batchW(:))/size(ix,2); % actually this is incorrect, since many different W(i,:)
         end
-        loss_soft = ( sum(loss_soft(:))  + mu*(sum(batchW(:))-size(ix,2)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
 
         loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;
