@@ -1,4 +1,4 @@
-function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_source, t, lambda, eta, mu, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
+function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_source, t, lambda, eta, mu_1, mu_2, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
     N = size(X_t,4); % 5000 * ratio
     index = randperm(s_2, N); 
     codelen = size(U0_source{1},2);
@@ -43,16 +43,9 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
 
 
         % sum-to-one constraint, else using l1-norm
-        sum_to_one = true; 
-        if sum_to_one
-            batchW = W(labels,:);
-            sum_batchW = sum(batchW, 2);
-            square_sum_batchW = sum_batchW .* sum_batchW;
-            loss_soft = ( sum(loss_soft(:))  + mu*(sum(square_sum_batchW(:))+size(ix,2) - 2*sum(sum_batchW(:)) ) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
-        else
-            batchW = abs(W(labels,:));
-            loss_soft = ( sum(loss_soft(:))  + mu*sum(batchW(:)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
-        end
+        batchW = W(labels,:);
+        abs_batchW = abs(batchW);
+        loss_soft = ( sum(loss_soft(:)) + mu_1*( sum(batchW(:)) - size(ix,2) ) + mu_2*sum(abs_batchW(:)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
 
         loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;
@@ -79,12 +72,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             for i = 1:10
                num_i = sum(labels==i);
                if num_i
-                  if sum_to_one
-                      % cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * abs(sign(W(i,:); 
-                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - 2 * mu * (W(i,:) - 1);
-                  else
-                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * sign(W(i,:)); % add l1 norm
-                  end
+                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu_1*abs(sign(W(i,:))) - mu_2*sign(W(i,:));
                else
                   cls_dJdW(i,:) = zeros(1,500); % - sign(W(i,:)); % do not add l1 norm, since no update for it
                end

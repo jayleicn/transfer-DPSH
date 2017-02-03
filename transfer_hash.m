@@ -1,4 +1,4 @@
-function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, mu, ratio,  batchsize)
+function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, mu_1, mu_2, ratio,  batchsize)
     if ~exist([dataset_t,'.mat'])
         data_prepare(dataset_t);
     end
@@ -64,14 +64,14 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     fclose(fileID);
 
     fileID = fopen(['results/', dir_time, '/parameters.log'],'w');    
-    fprintf(fileID,'%s \n','codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize, lossOption');
-    fprintf(fileID,'%d \t %s \t %s \t %.2f \t %.2f \t %.2f \t %d \t %s \t %s\n', codelens, dataset_t, dataset_s, t, eta, ratio,  batchsize);
+    fprintf(fileID,'%s \n','codelens, dataset_t, dataset_s, t, eta, mu_1, mu_2,ratio,  batchsize');
+    fprintf(fileID,'%d \t %s \t %s \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %d\n', codelens, dataset_t, dataset_s, t, eta, mu_1, mu_2, ratio,  batchsize);
     fclose(fileID);
     
     s_2 = RandStream('mt19937ar','Seed',2);  % random seed to shuffle
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, W, loss_iter] = train(U,B,W, s_2, train_data_t,train_L_t, net, U0_source, t, lambda, eta, mu, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
+        [net, U, B, W, loss_iter] = train(U,B,W, s_2, train_data_t,train_L_t, net, U0_source, t, lambda, eta, mu_1, mu_2, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
         fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
