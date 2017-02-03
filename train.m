@@ -46,7 +46,9 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         sum_to_one = true; 
         if sum_to_one
             batchW = W(labels+1,:);
-            loss_soft = ( sum(loss_soft(:))  + mu*(sum(batchW(:))-size(ix,2)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
+            sum_batchW = sum(batchW, 2);
+            square_sum_batchW = sum_batchW .* sum_batchW;
+            loss_soft = ( sum(loss_soft(:))  + mu*(sum(square_sum_batchW(:))+size(ix,2) - 2*sum_batchW ) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
         else
             batchW = abs(W(labels+1,:));
             loss_soft = ( sum(loss_soft(:))  + mu*sum(batchW(:)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
@@ -78,7 +80,8 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
                num_i = sum(labels==i);
                if num_i
                   if sum_to_one
-                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * abs(sign(W(i,:)));
+                      % cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * abs(sign(W(i,:);
+                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - 2 * mu * (W(i,:) - 1);
                   else
                       cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * sign(W(i,:)); % add l1 norm
                   end
@@ -87,6 +90,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
                end
             end
             W = W + lr_w .* cls_dJdW; % W [ 10 x n_per_cls ], note cls_dJdW is negative derative
+            W(W<0) = 0; % non-negative constraint
         end
         % Update W end
 
