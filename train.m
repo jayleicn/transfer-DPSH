@@ -31,8 +31,8 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             tmp = U0_source{i+1} .* repmat(500.*W(i+1,:)', 1, codelen);
             cls_weighted_U0_source(i+1,:) = sum(tmp, 1) ./ 500;
         end
-        labels = L_t(ix); % this should be L_t, from target set.
-        weighted_U0_source = cls_weighted_U0_source(labels+1,:); % batchsize * codelen
+        labels = L_t(ix) + 1; % this should be L_t, from target set.
+        weighted_U0_source = cls_weighted_U0_source(labels,:); % batchsize * codelen
         
         % update neural nets & compute loss
         softmax_U0 = softmax(U0')';
@@ -45,12 +45,12 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         % sum-to-one constraint, else using l1-norm
         sum_to_one = true; 
         if sum_to_one
-            batchW = W(labels+1,:);
+            batchW = W(labels,:);
             sum_batchW = sum(batchW, 2);
             square_sum_batchW = sum_batchW .* sum_batchW;
             loss_soft = ( sum(loss_soft(:))  + mu*(sum(square_sum_batchW(:))+size(ix,2) - 2*sum(sum_batchW(:)) ) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
         else
-            batchW = abs(W(labels+1,:));
+            batchW = abs(W(labels,:));
             loss_soft = ( sum(loss_soft(:))  + mu*sum(batchW(:)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
         end
 
@@ -72,7 +72,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             dJdP = -log(softmax_U0 + 1e-30); % [batchsize * code_len]
             for i =1:length(labels)
                single_dPdQ = repmat(P(i,:)',1,codelen) .* eye(codelen) - P(i,:)'*P(i,:); % code_len * code_len
-               single_dQdW = U0_source{labels(i)+1}'; % should be[ code_len x n_per_cls ]
+               single_dQdW = U0_source{labels(i)}'; % should be[ code_len x n_per_cls ]
                dJdW(i,:) = dJdP(i,:) * single_dPdQ * single_dQdW; % (batchsize x) [1 x codelen] * [ codelen x codelen ] * [ codelen x  n_per_cls ]
             end
 
@@ -80,8 +80,8 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
                num_i = sum(labels==i);
                if num_i
                   if sum_to_one
-                      % cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * abs(sign(W(i,:);
-                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - 2 * mu * (W(i,:) - 1);
+                      % cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * abs(sign(W(i,:); 
+                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)sk/num_i - 2 * mu * (W(i,:) - 1);
                   else
                       cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * sign(W(i,:)); % add l1 norm
                   end
