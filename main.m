@@ -13,7 +13,7 @@ for i=1:N
    for j=1:l
      [ ~, ~, map_tmp] = transfer_hash(32, 'svhn', 'mnist', 2, 0.5, mu_1(j), 0.1, ratio_array(i), batchsize(i));
      map(i+1,j) = map_tmp;
-     map(1,j)=mu(j);
+     map(1,j)=mu_1(j);
    end
 end
 fileID = fopen(['results/', 'mnist2svhn005_02_eta2.log'], 'w');
