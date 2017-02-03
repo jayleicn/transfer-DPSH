@@ -34,10 +34,10 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     net = vl_simplenn_tidy(net);
 
     %% initialization
-    maxIter = 120;
+    maxIter = 70;
     lambda = 10;
-    lr(1:100) =  0.03;
-    lr(101:120) = 0.01;
+    lr(1:60) =  0.03;
+    lr(61:70) = 0.01;
 
     totalTime = tic;
     net = net_structure(net, codelens);

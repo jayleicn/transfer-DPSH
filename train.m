@@ -74,7 +74,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             for i = 1:10
                num_i = sum(labels==i);
                if num_i
-                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu_1*2*(W(i,:)-1) - mu_2*sign(W(i,:));
+                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu_1*2*(sum(W(i,:))*ones(size(W(i,:)))-1) - mu_2*sign(W(i,:));
                else
                   cls_dJdW(i,:) = zeros(1,500); % - sign(W(i,:)); % do not add l1 norm, since no update for it
                end
