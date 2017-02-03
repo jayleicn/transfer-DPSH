@@ -81,7 +81,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
                if num_i
                   if sum_to_one
                       % cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * abs(sign(W(i,:); 
-                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)sk/num_i - 2 * mu * (W(i,:) - 1);
+                      cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - 2 * mu * (W(i,:) - 1);
                   else
                       cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu * sign(W(i,:)); % add l1 norm
                   end

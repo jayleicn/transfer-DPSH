@@ -34,14 +34,13 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     net = vl_simplenn_tidy(net);
 
     %% initialization
-    maxIter = 160;
+    maxIter = 50;
     lambda = 10;
     %t=1.0; % temperature of soft_target
     %eta=0.1; % weight of soft_target
     %lr = logspace(-2,-6,maxIter); with maxIter =150
-    lr(1:100) =  0.03;
-    lr(101:150) = 0.01;
-    lr(151:160) = 0.001;
+    lr(1:40) =  0.03;
+    lr(41:50) = 0.01;
 
     totalTime = tic;
     net = net_structure(net, codelens);
