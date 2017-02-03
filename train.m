@@ -45,7 +45,9 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         % sum-to-one constraint, else using l1-norm
         batchW = W(labels,:);
         abs_batchW = abs(batchW);
-        loss_soft = ( sum(loss_soft(:)) + mu_1*( sum(batchW(:)) - size(ix,2) ) + mu_2*sum(abs_batchW(:)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
+        sum_batchW = sum(batchW, 2);
+        square_batchW = sum_batchW .* sum_batchW;
+        loss_soft = ( sum(loss_soft(:)) + mu_1*( sum(square_batchW(:)) + size(ix,2) - 2*sum(sum_batchW(:)) ) + mu_2*sum(abs_batchW(:)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
 
         loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;
@@ -72,7 +74,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             for i = 1:10
                num_i = sum(labels==i);
                if num_i
-                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu_1*abs(sign(W(i,:))) - mu_2*sign(W(i,:));
+                  cls_dJdW(i,:) = - sum(dJdW(find(labels==i),:), 1)/num_i - mu_1*2*(W(i,:)-1) - mu_2*sign(W(i,:));
                else
                   cls_dJdW(i,:) = zeros(1,500); % - sign(W(i,:)); % do not add l1 norm, since no update for it
                end
