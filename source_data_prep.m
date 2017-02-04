@@ -8,7 +8,7 @@ function source_data_prep(dataset_s) % train_data, train_L  *,*,*,5000
     X_s = dataset_source.train_data;
 
     % load source pretrained network
-    net_source = load('/home/jielei/project/s_new/DPSH-IJCAI16/results/raw-exp/mnist-32-10-Jan-2017-01:10:23/net.mat'); % 0.99
+    % net_source = load('/home/jielei/project/s_new/DPSH-IJCAI16/results/raw-exp/mnist-32-10-Jan-2017-01:10:23/net.mat'); % 0.99
     net_source = net_source.net;
     net_source = vl_simplenn_tidy(net_source);
 
@@ -33,5 +33,5 @@ function source_data_prep(dataset_s) % train_data, train_L  *,*,*,5000
         U0_source = cat(1, U0_source, tmp_U0_source);
     end
     U0_L = dataset_source.train_L;
-    save([dataset_s,'_U0.mat'], 'U0_source', 'U0_L');
+    save([dataset_s,'_dsh_U0.mat'], 'U0_source', 'U0_L');
 end

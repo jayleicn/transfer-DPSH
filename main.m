@@ -1,4 +1,6 @@
 function map = main()
+codelen = 32;
+alpha = 0.01;
 ratio_array = [0.1, 0.2, 0.4];
 batchsize = [32, 32, 64];
 N = length(batchsize);
@@ -11,7 +13,7 @@ l = length(mu_1);
 map = zeros(4,l);
 for i=1:N
    for j=1:l
-     [ ~, ~, map_tmp] = transfer_hash(32, 'svhn', 'mnist', 2, 0.5, mu_1(j), 0.1, ratio_array(i), batchsize(i));
+     [ ~, ~, map_tmp] = transfer_hash(codelen, 'svhn', 'mnist', 2, 2*codelen , alpha, 0.5, mu_1(j), 0.1, ratio_array(i), batchsize(i));
      map(i+1,j) = map_tmp;
      map(1,j)=mu_1(j);
    end

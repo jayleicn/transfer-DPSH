@@ -1,13 +1,13 @@
-function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, eta, mu_1, mu_2, ratio,  batchsize)
+function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, m, alpha, eta, mu_1, mu_2, ratio,  batchsize)
     if ~exist([dataset_t,'.mat'])
         data_prepare(dataset_t);
     end
     dataset_target = load([dataset_t,'.mat']);
 
-    if ~exist([dataset_s,'_U0.mat'])
+    if ~exist([dataset_s,'_dsh_U0.mat'])
         source_data_prep(dataset_s);
     end
-    dataset_source = load([dataset_s,'_U0.mat']);
+    dataset_source = load([dataset_s,'_dsh_U0.mat']);
 
     %% vary training data size
     % ratio = 1.0;
@@ -35,7 +35,6 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
 
     %% initialization
     maxIter = 70;
-    lambda = 10;
     lr(1:60) =  0.03;
     lr(61:70) = 0.01;
 
@@ -46,37 +45,37 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
     W = ones(10,500)./500; % initialized as the average
 
     %% saving
-    if ~exist('results', 'dir')
-        mkdir('results');
+    if ~exist('results_dsh', 'dir')
+        mkdir('results_dsh');
     end
     dir_time = [dataset_t, dataset_s, '-', num2str(codelens), '-', datestr(now, 'dd-mmm-yyyy-HH:MM:SS')];
-    mkdir(['results/', dir_time]);
-    fileID = fopen(['results/', dir_time, '/loss.log'],'w');  
+    mkdir(['results_dsh/', dir_time]);
+    fileID = fopen(['results_dsh/', dir_time, '/loss.log'],'w');  
     fprintf(fileID, '%.2f', 'ratio'); 
     fprintf(fileID,'%6s %12s %10s\n','iter','loss', 'lr');
     fclose(fileID);
 
-    fileID = fopen(['results/', dir_time, '/map.log'],'w');    
+    fileID = fopen(['results_dsh/', dir_time, '/map.log'],'w');    
     fprintf(fileID,'%6s %4s\n','iter','map');
     fclose(fileID);
 
-    fileID = fopen(['results/', dir_time, '/parameters.log'],'w');    
-    fprintf(fileID,'%s \n','codelens, dataset_t, dataset_s, t, eta, mu_1, mu_2,ratio,  batchsize');
-    fprintf(fileID,'%d \t %s \t %s \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %d\n', codelens, dataset_t, dataset_s, t, eta, mu_1, mu_2, ratio,  batchsize);
+    fileID = fopen(['results_dsh/', dir_time, '/parameters.log'],'w');    
+    fprintf(fileID,'%s \n','codelens, dataset_t, dataset_s, t, m, alpha, eta, mu_1, mu_2,ratio,  batchsize');
+    fprintf(fileID,'%d \t %s \t %s \t %.4f \t %.4f \t %d \t %.4f \t %.4f \t %.4f \t %.4f \t %d\n', codelens, dataset_t, dataset_s, t, m, alpha, eta, mu_1, mu_2, ratio,  batchsize);
     fclose(fileID);
     
     s_2 = RandStream('mt19937ar','Seed',2);  % random seed to shuffle
     for iter = 1: maxIter
         loss_iter = 0;
-        [net, U, B, W, loss_iter] = train(U,B,W, s_2, train_data_t,train_L_t, net, U0_source, t, lambda, eta, mu_1, mu_2, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
-        fileID = fopen(['results/', dir_time, '/loss.log'], 'a'); % append
+        [net, U, B, W, loss_iter] = train(U,B,W, s_2, train_data_t,train_L_t, net, U0_source, t, m, alpha, eta, mu_1, mu_2, iter, lr(iter), loss_iter, batchsize); %dataset_source.train_data, train_idx_s, net_source,
+        fileID = fopen(['results_dsh/', dir_time, '/loss.log'], 'a'); % append
         fprintf(fileID, '%6d %10.4f %10d\n', [iter; loss_iter; lr(iter)]);
         fclose(fileID);
         %validating
         if mod(iter, 20) == 0
             map_val = test(net, dataset_target.retrieve_val_L, dataset_target.val_L, dataset_target.retrieve_val, dataset_target.val_data );
             fprintf('current validation MAP is %.2f\n', map_val);
-            fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append
+            fileID = fopen(['results_dsh/', dir_time, '/map.log'], 'a'); % append
             map_iter = [iter; map_val];
             fprintf(fileID, '%6d %2.4f\n', map_iter);
             fclose(fileID);
@@ -85,12 +84,12 @@ function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, 
  
     %% testing
     [map,B_dataset,B_test] = test(net, dataset_target.retrieve_test_L, dataset_target.test_L, dataset_target.retrieve_test, dataset_target.test_data );
-    fileID = fopen(['results/', dir_time, '/map.log'], 'a'); % append
+    fileID = fopen(['results_dsh/', dir_time, '/map.log'], 'a'); % append
     map_iter = [0; map];
     fprintf(fileID, '%6d %2.4f\n', map_iter);
     fclose(fileID);
-    save(['./results/', dir_time, '/codes_res', '.mat'], 'B_dataset','B_test','map', 'W');
-    save(['./results/', dir_time, '/net', '.mat'], 'net');
+    save(['./results_dsh/', dir_time, '/codes_res', '.mat'], 'B_dataset','B_test','map', 'W');
+    save(['./results_dsh/', dir_time, '/net', '.mat'], 'net');
     totalTime=toc(totalTime);
     fprintf('Total elapsed time is %4.2f seconds', totalTime);
 end

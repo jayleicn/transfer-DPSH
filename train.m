@@ -1,4 +1,4 @@
-function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_source, t, lambda, eta, mu_1, mu_2, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
+function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_source, t, m, alpha, eta, mu_1, mu_2, iter, lr, loss_iter, batchsize) %X_s, Idx_s, net_source,
     N = size(X_t,4); % 5000 * ratio
     index = randperm(s_2, N); 
     codelen = size(U0_source{1},2);
@@ -15,16 +15,45 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         im_ = gpuArray(im_); % 224*224*3*128 
         res = vl_simplenn(net, im_);
         U0 = squeeze(gather(res(end).x))'; % res(end).x is the net output, batchsize * codelen
-        U(ix,:) = U0 ; % update relative rows
+        U(ix,:) = U0; % update relative rows
         B(ix,:) = sign(U0);  % update relative rows
 
-        T = U0 * U' / 2;
-        A = 1 ./ (1 + exp(-T)); 
-        bN = size(ix, 2) * N;
-        loss_hard_1 = -S.*T + log1p(exp(-T)) + T;
-        loss_hard_2 = lambda*((U0-sign(U0)).^2); % log(1+exp(-x)) + x
-        loss_hard = (sum(loss_hard_1(:)) + sum(loss_hard_2(:)))/bN;
-        dJdU = ((S - A) * U - 2*lambda*(U0-sign(U0)))/bN; % hard
+        % T = U0 * U' / 2;
+        % A = 1 ./ (1 + exp(-T)); 
+        % bN = size(ix, 2) * N;
+        % loss_hard_1 = -S.*T + log1p(exp(-T)) + T;
+        % loss_hard_2 = lambda*((U0-sign(U0)).^2); % log(1+exp(-x)) + x
+        % loss_hard = (sum(loss_hard_1(:)) + sum(loss_hard_2(:)))/bN;
+        % dJdU = ((S - A) * U - 2*lambda*(U0-sign(U0)))/bN; % hard
+
+        % [begin] compute loss_hard and gradient  -- only in minibatch
+        S = S(:,ix);
+        cur_b = size(ix,2);
+        cur_b2 = cur_b^2;
+        loss_1 = 0;
+        loss_2 = 0;
+        clear dJdU_1; % matrix
+        clear dJdU_2; % matrix
+        for i=1:size(ix,2)
+            A = repmat(U0(i,:), cur_b, 1) - U0; % N * codelen
+            A_sum_square = sum(A.^2, 2); % N*1
+            loss_1 = loss_1 + 0.5 * (1 - S(i,:)) * A_sum_square;
+            loss_2 = loss_2 + 0.5 * S(i,:) * max(m - A_sum_square, 0);
+            dJdU_1(i,:) = 2 * (1 - S(i,:)) * A;
+            dJdU_2(i,:) = - 2 * S(i,:) * (A .* repmat((m - A_sum_square) > 0, 1, size(U0, 2)));  
+        end
+        loss_1 = loss_1 / cur_b2;
+        loss_2 = loss_2 / cur_b2;
+        dJdU_1 = dJdU_1 ./ cur_b2;
+        dJdU_2 = dJdU_2 ./ cur_b2;
+        
+        U0_3 = abs(abs(U0)-1);
+        loss_3 = alpha * sum(U0_3(:)) / cur_b;
+        dJdU_3 = 2 * alpha * d_func(U0) ./ cur_b;
+
+        loss_hard = loss_1 + loss_2 + loss_3;
+        dJdU = - dJdU_1 - dJdU_2 - dJdU_3; 
+        % [end] compute loss_hard and gradient
 
         % averged sum [source]
         for i = 0:9
@@ -39,7 +68,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         Q = weighted_U0_source./t;
         P = softmax(Q')';
         loss_soft = -P.*log(softmax_U0 + 1e-30); % cross_entropy
-        dJdU_soft = t*t*(P - softmax_U0)/size(ix,2); % cross_entropy
+        dJdU_soft = t*t*(P - softmax_U0)/size(ix,2); % cross_entropy, batchsize * codelen
 
 
         % sum-to-one constraint, else using l1-norm
@@ -54,10 +83,11 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         dJdU = dJdU + eta*dJdU_soft;
         dJdoutput = gpuArray(reshape(dJdU',[1,1,size(dJdU',1),size(dJdU',2)]));
         res = vl_simplenn( net, im_, dJdoutput);
+
         %% update the parameters of CNN
         net = update(net , res, lr);
 
-        % Update W begin 
+        % [begin] Update W  
         % How? update from W(1,:) to W(10,:), in sequence.
         % for single first
         % [batchsize * code_len]
@@ -82,7 +112,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
             W = W + lr_w .* cls_dJdW; % W [ 10 x n_per_cls ], note cls_dJdW is negative derative
             W(W<0) = 0; % non-negative constraint
         end
-        % Update W end
+        % [end] Update W 
 
         batch_time = toc(batch_time);
         fprintf(' iter %d loss %.2f = %.2f + %.2f batch %d/%d (%.1f img/s) ,lr is %d\n', iter, loss_batch, loss_hard, eta*loss_soft, j+1,ceil(size(X_t,4)/batchsize), batchsize/ batch_time,lr) ;
