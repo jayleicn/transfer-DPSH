@@ -34,9 +34,9 @@ function [B_dataset,B_test,map] = transfer_dsh(codelens, dataset_t, dataset_s, t
     net = vl_simplenn_tidy(net);
 
     %% initialization
-    maxIter = 70;
-    lr(1:60) =  0.03;
-    lr(61:70) = 0.01;
+    maxIter = 100;
+    lr(1:100) =  0.001;
+
 
     totalTime = tic;
     net = net_structure(net, codelens);

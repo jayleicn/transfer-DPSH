@@ -16,5 +16,5 @@ function net = net_structure (net, codelens)
     net.layers{20}.opts = {};
     net.layers{20}.dilate = 1; % set to default, cannot omit
 
-    net.layers{21}.type = 'sigmoid_ext'; 
+    %net.layers{21}.type = 'sigmoid_ext'; 
 end

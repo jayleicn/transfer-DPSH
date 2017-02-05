@@ -1,7 +1,7 @@
 # Project-related   #
 *.mat
 ./results
-
+./results_dsh
 
 # Packages #
 ############
