@@ -35,7 +35,7 @@ function [B_dataset,B_test,map] = transfer_dsh(codelens, dataset_t, dataset_s, t
 
     %% initialization
     maxIter = 100;
-    lr(1:100) =  0.001;
+    lr(1:200) =  0.001;
 
 
     totalTime = tic;

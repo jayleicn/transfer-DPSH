@@ -6,7 +6,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         batch_time=tic;
         %% random select a minibatch
         ix = index((1+j*batchsize):min((j+1)*batchsize,N));
-        S = calcNeighbor (L_t, ix, 1:N); % #batchsize * N in {1,0}, similarity matrix
+        S = 1 - calcNeighbor (L_t, ix, 1:N); % #batchsize * N in {1,0}, similarity matrix
         %% load target
         im = X_t(:,:,:,ix);
         im_ = single(im); % note: 0-255 range, single precision
