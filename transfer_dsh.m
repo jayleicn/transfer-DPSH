@@ -34,7 +34,7 @@ function [B_dataset,B_test,map] = transfer_dsh(codelens, dataset_t, dataset_s, t
     net = vl_simplenn_tidy(net);
 
     %% initialization
-    maxIter = 100;
+    maxIter = 200;
     lr(1:200) =  0.001;
 
 
