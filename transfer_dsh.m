@@ -1,4 +1,4 @@
-function [B_dataset,B_test,map] = transfer_hash(codelens, dataset_t, dataset_s, t, m, alpha, eta, mu_1, mu_2, ratio,  batchsize)
+function [B_dataset,B_test,map] = transfer_dsh(codelens, dataset_t, dataset_s, t, m, alpha, eta, mu_1, mu_2, ratio,  batchsize)
     if ~exist([dataset_t,'.mat'])
         data_prepare(dataset_t);
     end
