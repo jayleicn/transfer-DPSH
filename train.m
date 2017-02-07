@@ -18,13 +18,25 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         U(ix,:) = U0 ; % update relative rows
         B(ix,:) = sign(U0);  % update relative rows
 
-        T = U0 * U' / 2;
-        A = 1 ./ (1 + exp(-T)); 
         bN = size(ix, 2) * N;
+        cur_b = size(ix,2);
+        T = U0 * U';
+        A = 1 ./ (1 + exp(-T)); 
         loss_hard_1 = -S.*T + log1p(exp(-T)) + T;
-        loss_hard_2 = lambda*((U0-sign(U0)).^2); % log(1+exp(-x)) + x
-        loss_hard = (sum(loss_hard_1(:)) + sum(loss_hard_2(:)))/bN;
-        dJdU = ((S - A) * U - 2*lambda*(U0-sign(U0)))/bN; % hard
+        loss_hard_1 = sum(loss_hard_1(:)) / bN
+
+        loss_M3_1 = log(cosh(abs(U0) - 1));
+        loss_M3_1 = sum(loss_M3_1(:)) / cur_b;
+        loss_M3_2 = log(cosh(abs(U) - 1));
+        loss_M3_2 = sum(loss_M3_2(:)) / N;
+        loss_hard_2 = lambda * (loss_M3_1 + loss_M3_2);
+
+        loss_hard = loss_hard_1 + loss_hard_2;
+
+
+        dJdU_1 = (S - A) * U; % actually -dJdU
+        dJdU_2 = - 2*lambda* tanh(abs(U0) - 1) .* sign(U0); % actually -dJdU
+        dJdU = dJdU_1 ./ bN + dJdU_2 ./ cur_b; 
 
         % averged sum [source]
         for i = 0:9
@@ -39,7 +51,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         Q = weighted_U0_source./t;
         P = softmax(Q')';
         loss_soft = -P.*log(softmax_U0 + 1e-30); % cross_entropy
-        dJdU_soft = t*t*(P - softmax_U0)/size(ix,2); % cross_entropy
+        dJdU_soft = t*t*(P - softmax_U0)/cur_b; % cross_entropy
 
 
         % sum-to-one constraint, else using l1-norm
@@ -47,7 +59,7 @@ function [net, U, B, W, loss_iter] = train (U, B, W, s_2, X_t, L_t, net, U0_sour
         abs_batchW = abs(batchW);
         sum_batchW = sum(batchW, 2);
         square_batchW = sum_batchW .* sum_batchW;
-        loss_soft = ( sum(loss_soft(:)) + mu_1*( sum(square_batchW(:)) + size(ix,2) - 2*sum(sum_batchW(:)) ) + mu_2*sum(abs_batchW(:)) )/size(ix,2); % actually this is incorrect, since many different W(i,:)
+        loss_soft = ( sum(loss_soft(:)) + mu_1*( sum(square_batchW(:)) + cur_b - 2*sum(sum_batchW(:)) ) + mu_2*sum(abs_batchW(:)) )/cur_b; % actually this is incorrect, since many different W(i,:)
 
         loss_batch = loss_hard + eta*loss_soft;
         loss_iter = loss_iter + loss_batch;

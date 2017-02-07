@@ -1,6 +1,8 @@
 # Project-related   #
 *.mat
 ./results
+./results_dsh
+./results_dhn
 
 
 # Packages #
